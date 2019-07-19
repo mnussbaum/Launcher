@@ -1,6 +1,6 @@
 use gtk::prelude::*;
-use std::collections::HashMap;
 use crate::state::State;
+
 pub struct MainWindow {
     window: gtk::Window,
     results_list: gtk::ListBox,
@@ -34,6 +34,7 @@ impl MainWindow {
     }
 
     pub fn update_from(&self, state: &State) {
+        println!("{:?}", state);
         if let Some(ref err) = state.error {
         } else {
         }

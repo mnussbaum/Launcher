@@ -38,11 +38,9 @@ fn main() {
         let query_entry = gui.query_entry();
         let gui = Rc::clone(&gui);
         let state = Rc::clone(&state);
-        query_entry.connect_activate(move |_| {
-        // query_entry.connect_activate(move |entry| {
-            // let spec = entry.get_text().unwrap().to_string();
-
-            let state = state.borrow_mut();
+        query_entry.connect_changed( move |entry| {
+            let mut state = state.borrow_mut();
+            state.query = Some(entry.get_text().unwrap().to_string());
             gui.update_from(&state);
         });
     }
