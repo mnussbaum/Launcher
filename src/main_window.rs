@@ -1,5 +1,5 @@
-use gtk::prelude::*;
 use crate::state::State;
+use gtk::prelude::*;
 
 pub struct MainWindow {
     window: gtk::Window,
@@ -29,7 +29,10 @@ impl MainWindow {
     pub fn start(&self) {
         glib::set_application_name("launcher");
         self.window.set_wmclass("Launcher", "Launcher");
-        self.window.connect_delete_event(|_, _| { gtk::main_quit(); Inhibit(false) });
+        self.window.connect_delete_event(|_, _| {
+            gtk::main_quit();
+            Inhibit(false)
+        });
         self.window.show_all();
     }
 
@@ -37,6 +40,18 @@ impl MainWindow {
         println!("{:?}", state);
         if let Some(ref err) = state.error {
         } else {
+        }
+        let col_types: [gtk::Type; 1] = [gtk::Type::String];
+        let col_indices: [u32; 1] = [0];
+        let store = gtk::ListStore::new(&col_types);
+        if let Some(ref query_results) = state.query_results {
+            for query_result in query_results.iter() {
+                let values: [&dyn ToValue; 1] = [&query_result];
+                store.set(&store.append(), &col_indices, &values);
+            }
+        }
+        self.results_list.bind_model(Some(&store), clone!(window_weak => move |item| {
+        let box_ = gtk::ListBoxRow::new();
         }
 
         // self.result.set_text(&format!("{}", state.value));

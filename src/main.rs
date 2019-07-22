@@ -1,15 +1,17 @@
-extern crate gtk;
 extern crate glib;
+extern crate gtk;
 
-use std;
-use std::rc::Rc;
-use std::cell::RefCell;
 use gtk::prelude::*;
+use std;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 mod state;
 use state::State;
 mod main_window;
 use main_window::MainWindow;
+mod querier;
+use querier::Querier;
 
 fn main() {
     // Start up the GTK3 subsystem.
@@ -33,14 +35,13 @@ fn main() {
     //     });
     // }
 
-
     {
         let query_entry = gui.query_entry();
         let gui = Rc::clone(&gui);
         let state = Rc::clone(&state);
-        query_entry.connect_changed( move |entry| {
+        query_entry.connect_changed(move |entry| {
             let mut state = state.borrow_mut();
-            state.query = Some(entry.get_text().unwrap().to_string());
+            state.query_results = Some(Querier::new().query(entry.get_text().unwrap().to_string()));
             gui.update_from(&state);
         });
     }
@@ -48,4 +49,3 @@ fn main() {
     gui.start();
     gtk::main();
 }
-
