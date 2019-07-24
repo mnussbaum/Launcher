@@ -3,7 +3,7 @@
 # When uploading crates to the registry Cargo will automatically
 # "normalize" Cargo.toml files for maximal compatibility
 # with all versions of Cargo and also rewrite `path` dependencies
-# to registry (e.g. crates.io) dependencies
+# to registry (e.g., crates.io) dependencies
 #
 # If you believe there's an error in this file please file an
 # issue against the rust-lang/cargo repository. If you're
@@ -12,7 +12,7 @@
 
 [package]
 name = "gio"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["The Gtk-rs Project Developers"]
 build = "build.rs"
 exclude = ["gir-files/*"]
@@ -32,29 +32,21 @@ version = "1.0"
 [dependencies.fragile]
 version = "0.3"
 
-[dependencies.futures-channel-preview]
-version = "0.2"
-optional = true
-
-[dependencies.futures-core-preview]
-version = "0.2"
-optional = true
-
-[dependencies.futures-util-preview]
-version = "0.2"
+[dependencies.futures-preview]
+version = "0.3.0-alpha"
 optional = true
 
 [dependencies.gio-sys]
-version = "0.8.0"
+version = "0.9.0"
 
 [dependencies.glib]
-version = "0.7.0"
+version = "0.8.0"
 
 [dependencies.glib-sys]
-version = "0.8.0"
+version = "0.9.0"
 
 [dependencies.gobject-sys]
-version = "0.8.0"
+version = "0.9.0"
 
 [dependencies.lazy_static]
 version = "1.0"
@@ -70,8 +62,9 @@ optional = true
 [features]
 dox = ["gio-sys/dox", "glib/dox"]
 embed-lgpl-docs = ["gtk-rs-lgpl-docs"]
-futures = ["futures-core-preview", "futures-channel-preview", "futures-util-preview", "glib/futures"]
+futures = ["futures-preview", "glib/futures"]
 purge-lgpl-docs = ["gtk-rs-lgpl-docs"]
+subclassing = ["glib/subclassing"]
 v2_44 = ["gio-sys/v2_44", "glib/v2_44"]
 v2_46 = ["v2_44", "gio-sys/v2_46", "glib/v2_46"]
 v2_48 = ["v2_46", "gio-sys/v2_48", "glib/v2_48"]
