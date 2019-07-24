@@ -1,20 +1,23 @@
+extern crate gio;
 #[macro_use]
 extern crate glib;
-extern crate gio;
+extern crate glib_sys;
+extern crate gobject_sys;
 extern crate gtk;
 
-use gio::prelude::*;
 use gtk::prelude::*;
 use std;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-mod state;
-use state::State;
 mod main_window;
-use main_window::MainWindow;
 mod querier;
+mod row_data;
+mod state;
+
+use main_window::MainWindow;
 use querier::Querier;
+use state::State;
 
 fn main() {
     // Start up the GTK3 subsystem.
