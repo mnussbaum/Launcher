@@ -1,6 +1,9 @@
+#[macro_use]
 extern crate glib;
+extern crate gio;
 extern crate gtk;
 
+use gio::prelude::*;
 use gtk::prelude::*;
 use std;
 use std::cell::RefCell;
