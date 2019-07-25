@@ -57,7 +57,6 @@ impl MainWindow {
     }
 
     pub fn update_from(&self, state: &State) {
-        println!("{:?}", state);
         if let Some(ref err) = state.error {
         } else {
         }
@@ -84,7 +83,9 @@ impl MainWindow {
                 hbox.pack_start(&label, true, true, 0);
                 box_.add(&hbox);
 
-                box_.connect_activate(clone!(item => move |_| {
+                // This doesn't activate on click
+                box_.connect_activated(clone!(item => move |hi| {
+                    println!("hi {:?}", hi);
                     let maybe_result_text: Option<String> = item
                         .get_property("result_text").unwrap().get();
                     println!("{:?}", maybe_result_text);
@@ -100,8 +101,15 @@ impl MainWindow {
         // self.results_list.connect_row_selected(move |wee, woo| {
         //     println!("SELECTED {:?}, {:?}", wee, woo);
         // });
-        // self.results_list.connect_row_activated(move |_, activated_row| {
-        //     println!("{:?}", activated_row.user_data);
+
+        // This doesn't reset when results change
+        // Might need to move to a treview and do something like https://github.com/GuillaumeGomez/process-viewer/blob/master/src/procs.rs#L82-L96
+
+        // let maybe_query_results = state.query_results.clone();
+        // self.results_list.connect_row_activated(move |_, row| {
+        //     if let Some(query_results) = &maybe_query_results {
+        //         println!("{:?}", query_results.get(row.get_index() as usize).unwrap());
+        //     }
         // });
     }
 
