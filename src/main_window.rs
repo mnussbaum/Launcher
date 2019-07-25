@@ -73,22 +73,36 @@ impl MainWindow {
         self.results_list.bind_model(
             Some(&store),
             clone!(window_weak => move |item| {
-                let box_ = gtk::ListBoxRow::new();
                 let item = item.downcast_ref::<RowData>().expect("Row data is of wrong type");
-                let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
                 let label = gtk::Label::new(None);
                 item.bind_property("result_text", &label, "label")
                     .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
                     .build();
+
+                let box_ = gtk::ListBoxRow::new();
+                let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 5);
                 hbox.pack_start(&label, true, true, 0);
                 box_.add(&hbox);
+
+                box_.connect_activate(clone!(item => move |_| {
+                    let maybe_result_text: Option<String> = item
+                        .get_property("result_text").unwrap().get();
+                    println!("{:?}", maybe_result_text);
+                }));
+
                 box_.show_all();
 
                 box_.upcast::<gtk::Widget>()
             }),
         );
 
-        // self.result.set_text(&format!("{}", state.value));
+        self.results_list.set_activate_on_single_click(true);
+        // self.results_list.connect_row_selected(move |wee, woo| {
+        //     println!("SELECTED {:?}, {:?}", wee, woo);
+        // });
+        // self.results_list.connect_row_activated(move |_, activated_row| {
+        //     println!("{:?}", activated_row.user_data);
+        // });
     }
 
     pub fn query_entry(&self) -> &gtk::Entry {

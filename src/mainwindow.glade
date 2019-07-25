@@ -42,17 +42,14 @@
               <object class="GtkEntry" id="queryEntry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="has_focus">True</property>
                 <property name="is_focus">True</property>
                 <property name="can_default">True</property>
-                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="margin_left">3</property>
                 <property name="margin_right">3</property>
                 <property name="hexpand">True</property>
                 <property name="vexpand">False</property>
                 <property name="has_frame">False</property>
-                <property name="activates_default">True</property>
                 <property name="truncate_multiline">True</property>
                 <property name="placeholder_text" translatable="yes">Search</property>
               </object>
@@ -73,7 +70,6 @@
           <object class="GtkListBox" id="resultsList">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_top">134</property>
           </object>
           <packing>
             <property name="expand">True</property>
