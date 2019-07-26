@@ -1,16 +1,11 @@
-use gio::prelude::*;
 use gtk::prelude::*;
-
-use crate::state::State;
-use crate::row_data::RowData;
 
 pub struct MainWindow {
     window: gtk::Window,
-    results_list: gtk::ListBox,
+    results_store: gtk::ListStore,
     query_entry: gtk::Entry,
 }
 
-// make moving clones into closures more convenient
 macro_rules! clone {
     (@param _) => ( _ );
     (@param $x:ident) => ( $x );
@@ -30,23 +25,45 @@ macro_rules! clone {
 
 impl MainWindow {
     pub fn new() -> MainWindow {
-        // Initialize the UI from the Glade XML.
         let glade_src = include_str!("mainwindow.glade");
         let builder = gtk::Builder::new_from_string(glade_src);
 
-        // Get handles for the various controls we need to use.
         let window: gtk::Window = builder.get_object("mainWindow").unwrap();
-        let results_list: gtk::ListBox = builder.get_object("resultsList").unwrap();
         let query_entry: gtk::Entry = builder.get_object("queryEntry").unwrap();
+
+        let results_view: gtk::TreeView = builder.get_object("resultsList").unwrap();;
+        results_view.append_column(&MainWindow::build_results_column());
+
+        let results_store = gtk::ListStore::new(&[gtk::Type::String]);
+        results_view.set_model(Some(&results_store));
+
+        results_view.connect_row_activated(clone!(results_view => move |_, _, _| {
+            let selection = results_view.get_selection();
+            selection.get_selected().map(|(model, iter)| {
+                let hmm: Option<String> = model.get_value(&iter, 0).get();
+                println!("{:?}", hmm.unwrap());
+            });
+        }));
 
         MainWindow {
             window,
-            results_list,
+            results_store,
             query_entry,
         }
     }
 
-    // Set up naming for the window and show it to the user.
+    pub fn build_results_column() -> gtk::TreeViewColumn {
+        let column = gtk::TreeViewColumn::new();
+        let cell = gtk::CellRendererText::new();
+        column.set_sort_column_id(0);
+        column.set_title("results");
+        column.set_visible(true);
+        column.pack_start(&cell, true);
+        column.add_attribute(&cell, "text", 0);
+
+        return column
+    }
+
     pub fn start(&self) {
         glib::set_application_name("launcher");
         self.window.connect_delete_event(|_, _| {
@@ -56,61 +73,15 @@ impl MainWindow {
         self.window.show_all();
     }
 
-    pub fn update_from(&self, state: &State) {
-        if let Some(ref err) = state.error {
-        } else {
+    pub fn update_from(&self, query_results: Vec<String>) {
+        // For some reason only the first line of the initial insert shows, and
+        // then later inserts show all values. This line works around this quirk
+        self.results_store.insert_with_values(None, &[0], &[&""]);
+
+        self.results_store.clear();
+        for query_result in query_results.iter() {
+            self.results_store.insert_with_values(None, &[0], &[&query_result]);
         }
-
-        let store = gio::ListStore::new(RowData::static_type());
-        if let Some(ref query_results) = state.query_results {
-            for query_result in query_results.iter() {
-                store.append(&RowData::new(&query_result));
-            }
-        }
-
-        let window_weak = self.window.downgrade();
-        self.results_list.bind_model(
-            Some(&store),
-            clone!(window_weak => move |item| {
-                let item = item.downcast_ref::<RowData>().expect("Row data is of wrong type");
-                let label = gtk::Label::new(None);
-                item.bind_property("result_text", &label, "label")
-                    .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
-                    .build();
-
-                let box_ = gtk::ListBoxRow::new();
-                let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 5);
-                hbox.pack_start(&label, true, true, 0);
-                box_.add(&hbox);
-
-                // This doesn't activate on click
-                box_.connect_activated(clone!(item => move |hi| {
-                    println!("hi {:?}", hi);
-                    let maybe_result_text: Option<String> = item
-                        .get_property("result_text").unwrap().get();
-                    println!("{:?}", maybe_result_text);
-                }));
-
-                box_.show_all();
-
-                box_.upcast::<gtk::Widget>()
-            }),
-        );
-
-        self.results_list.set_activate_on_single_click(true);
-        // self.results_list.connect_row_selected(move |wee, woo| {
-        //     println!("SELECTED {:?}, {:?}", wee, woo);
-        // });
-
-        // This doesn't reset when results change
-        // Might need to move to a treview and do something like https://github.com/GuillaumeGomez/process-viewer/blob/master/src/procs.rs#L82-L96
-
-        // let maybe_query_results = state.query_results.clone();
-        // self.results_list.connect_row_activated(move |_, row| {
-        //     if let Some(query_results) = &maybe_query_results {
-        //         println!("{:?}", query_results.get(row.get_index() as usize).unwrap());
-        //     }
-        // });
     }
 
     pub fn query_entry(&self) -> &gtk::Entry {
