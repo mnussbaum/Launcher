@@ -1,4 +1,4 @@
-use std::io::Write;
+// use std::io::Write;
 use std::process::{Command, Stdio};
 
 pub struct Querier {}
@@ -9,7 +9,7 @@ impl Querier {
     }
 
     pub fn query(&self, query_text: String) -> Vec<String> {
-        let mut child = Command::new("/bin/ls")
+        let child = Command::new("/bin/ls")
             .arg(query_text)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -26,6 +26,7 @@ impl Querier {
         // Return a stream of results that joins the command outputs
         return String::from_utf8_lossy(&output.stdout)
             .to_string()
+            .trim()
             .split("\n")
             .map(String::from)
             .collect();
