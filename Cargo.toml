@@ -12,3 +12,4 @@ edition = "2018"
 [dependencies]
 glib = "^0"
 gtk = "^0"
+nom = "^5"
