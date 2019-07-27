@@ -16,44 +16,41 @@ use nom::character::complete::line_ending;
 use nom::character::complete::anychar;
 use nom::sequence::delimited;
 
+use crate::plugin::Plugin;
+
 #[derive(Debug)]
-pub struct Query {
-    keywords: HashMap<String, String>,
-    raw_text: String,
-    text: String,
+pub struct Query<'query> {
+    pub keywords: HashMap<&'query str, &'query str>,
+    raw_text: &'query str,
+    pub text: &'query str,
 }
 
-pub struct Querier {}
+pub struct Querier<'querier> {
+    plugins: Vec<Plugin<'querier>>,
+}
 
-impl Querier {
+impl<'querier> Querier<'querier> {
     pub fn new() -> Self {
-        return Self {};
+        return Self {
+            plugins: vec![
+                Plugin::new("/bin/ls", false, semver::Version::parse("1.0.0").unwrap()),
+            ],
+        };
     }
 
-    pub fn query(&self, query_text: String) -> Vec<String> {
-        let query = self.parse_query_text(query_text);
+    pub fn query(&mut self, query_text: &str) -> Vec<String> {
+        let query_with_line_ending = format!("{}\n", query_text);
+        let query = self.parse_query_text(query_with_line_ending.as_str());
+        for plugin in self.plugins.iter_mut() {
+            plugin.run_query_if_applicable(&query).unwrap();
+        }
 
-        let child = Command::new("/bin/ls")
-            .arg(query.text)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("failed to execute child");
-        //         let mut stdin = child.stdin.as_mut().expect("Failed to open stdin");
-        //         stdin.write_all("Hello, world!".as_bytes()).expect(
-        //             "Failed to write to
-        // stdin",
-        //         );
+        let mut query_results: Vec<String> = Vec::new();
+        for ref mut plugin in self.plugins.iter_mut() {
+            query_results.extend(plugin.yield_query_output().unwrap());
+        }
 
-        let output = child.wait_with_output().expect("Failed to read stdout");
-        // Kick off commands in a loop
-        // Return a stream of results that joins the command outputs
-        return String::from_utf8_lossy(&output.stdout)
-            .to_string()
-            .trim()
-            .split("\n")
-            .map(String::from)
-            .collect();
+        return query_results
     }
 
     // Parse text into keys, values and remainder text. Values can be single
@@ -66,12 +63,11 @@ impl Querier {
     //
     // {"key1": "value1", "key2": "value2 \" woo", "key3": "value3"}
     // Remainder text: "bye"
-    pub fn parse_query_text(&self, query_text: String) -> Query {
+    pub fn parse_query_text<'query_text>(&self, query_text: &'query_text str) -> Query<'query_text> {
         // Add line ending just to match against it to determine end of string
-        let query_with_line_ending = format!("{}\n", query_text);
 
         let mut query_iterator = iterator(
-            query_with_line_ending.as_str(),
+            query_text.as_ref(),
             terminated(separated_pair(
                     alphanumeric1,
                     tag(":"),
@@ -86,8 +82,8 @@ impl Querier {
             ), alt((tag(" "), line_ending)))
         );
 
-        let parsed_keywords = query_iterator.map( |(k, v)| {
-            (k.to_string(), v.to_string())
+        let parsed_keywords = query_iterator.map( |(k, v): (&str, &str)| {
+            (k, v)
         }).collect::<HashMap<_, _>>();
         let parser_result: IResult<_, _> = query_iterator.finish();
         let (remainder_text, ()) = parser_result.unwrap();
@@ -95,7 +91,7 @@ impl Querier {
         return Query {
             keywords: parsed_keywords,
             raw_text: query_text,
-            text: remainder_text.trim().to_string(),
+            text: remainder_text.trim(),
         }
     }
 }

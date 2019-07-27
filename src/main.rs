@@ -1,12 +1,14 @@
 extern crate glib;
 extern crate gtk;
 extern crate nom;
+extern crate semver;
 
 use gtk::prelude::*;
 use std;
 use std::rc::Rc;
 
 mod main_window;
+mod plugin;
 mod querier;
 
 use main_window::MainWindow;
@@ -21,7 +23,7 @@ fn main() {
         let main_window = Rc::clone(&main_window);
         query_entry.connect_changed(move |entry| {
             main_window.update_from(Querier::new().query(
-                entry.get_text().unwrap().to_string()
+                entry.get_text().unwrap().as_str()
             ));
         });
     }
