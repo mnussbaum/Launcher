@@ -70,7 +70,7 @@ impl Querier {
         // Add line ending just to match against it to determine end of string
         let query_with_line_ending = format!("{}\n", query_text);
 
-        let mut nom_it = iterator(
+        let mut query_iterator = iterator(
             query_with_line_ending.as_str(),
             terminated(separated_pair(
                     alphanumeric1,
@@ -86,8 +86,10 @@ impl Querier {
             ), alt((tag(" "), line_ending)))
         );
 
-        let parsed_keywords = nom_it.map(|(k, v)| (k.to_string(), v.to_string())).collect::<HashMap<_, _>>();
-        let parser_result: IResult<_, _> = nom_it.finish();
+        let parsed_keywords = query_iterator.map( |(k, v)| {
+            (k.to_string(), v.to_string())
+        }).collect::<HashMap<_, _>>();
+        let parser_result: IResult<_, _> = query_iterator.finish();
         let (remainder_text, ()) = parser_result.unwrap();
 
         return Query {
