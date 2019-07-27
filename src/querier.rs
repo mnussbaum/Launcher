@@ -1,5 +1,5 @@
-// use std::io::Write;
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 use nom::IResult;
 use nom::bytes::complete::tag;
@@ -15,6 +15,9 @@ use nom::bytes::complete::is_not;
 use nom::character::complete::line_ending;
 use nom::character::complete::anychar;
 use nom::sequence::delimited;
+
+use tokio::prelude::*;
+use tokio_process::CommandExt;
 
 #[derive(Debug)]
 pub struct Query {
@@ -33,27 +36,41 @@ impl Querier {
     pub fn query(&self, query_text: String) -> Vec<String> {
         let query = self.parse_query_text(query_text);
 
-        let child = Command::new("/bin/ls")
+        let mut runtime = tokio::runtime::Runtime::new().expect("Could not create tokio runtime!");
+        let mut plugin_process = Command::new("/usr/bin/ls")
             .arg(query.text)
             .stdin(Stdio::piped())
+            .stderr(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("failed to execute child");
-        //         let mut stdin = child.stdin.as_mut().expect("Failed to open stdin");
-        //         stdin.write_all("Hello, world!".as_bytes()).expect(
-        //             "Failed to write to
-        // stdin",
-        //         );
-
-        let output = child.wait_with_output().expect("Failed to read stdout");
-        // Kick off commands in a loop
-        // Return a stream of results that joins the command outputs
-        return String::from_utf8_lossy(&output.stdout)
-            .to_string()
-            .trim()
-            .split("\n")
-            .map(String::from)
-            .collect();
+            .spawn_async()
+            .expect("Failed to start player 1!");
+        // let mut player1_input = player1_process.stdin().take().unwrap();
+        // let fut = tokio_io::io::write_all(player1_input, "uci\n".as_bytes());
+        // player1_input = runtime.block_on(fut).expect("Couldn't write").0;
+        // let fut = tokio_io::io::write_all(player1_input, "isready\n".as_bytes());
+        // player1_input = runtime.block_on(fut).expect("Couldn't write").0;
+        let plugin_output = plugin_process.stdout().take().unwrap();
+        let lines_codec = tokio::codec::LinesCodec::new();
+        let line_fut = tokio::codec::FramedRead::new(plugin_output, lines_codec)
+            .into_future()
+            .timeout(Duration::from_millis(3000));
+        let result = runtime.block_on(line_fut);
+        match result {
+            Ok(s) => match s.0 {
+                Some(str) => {
+                    return str.trim()
+                        .split("\n")
+                        .map(String::from)
+                        .collect();
+                }
+                None => {
+                    return Vec::new();
+                }
+            },
+            Err(e) => {
+                    return Vec::new();
+            },
+        }
     }
 
     // Parse text into keys, values and remainder text. Values can be single

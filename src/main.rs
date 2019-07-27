@@ -1,6 +1,7 @@
 extern crate glib;
 extern crate gtk;
 extern crate nom;
+extern crate tokio;
 
 use gtk::prelude::*;
 use std;
