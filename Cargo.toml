@@ -10,9 +10,24 @@ authors = ["mnussbaum <michaelnussbaum08@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-glib = "^0"
-gtk = "^0"
+async-std = "1.0"
+directories = "2.0"
+tokio = { version = "0.2", features = ["full"] }
 nom = "^5"
-tokio = "^0"
-tokio-io = "^0"
-tokio-process = "^0"
+semver = "^0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dependencies.iced_native]
+git = "https://github.com/hecrj/iced.git"
+branch = "master"
+
+[dependencies.iced_futures]
+git = "https://github.com/hecrj/iced.git"
+features = ["tokio"]
+branch = "master"
+
+[dependencies.iced]
+git = "https://github.com/hecrj/iced.git"
+branch = "master"
+features = ["async-std"]
