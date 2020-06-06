@@ -14,13 +14,16 @@ use iced::{
 };
 
 mod message;
-use message::{Message, QueryProgress};
+use message::{LauncherMessage, QueryProgress};
 
 mod query;
 use query::Query;
 
 mod query_result_view;
 use query_result_view::QueryResultView;
+
+mod launcher_widget;
+use launcher_widget::LauncherWidget;
 
 pub fn main() {
     Launcher::run(Settings::default())
@@ -47,10 +50,11 @@ enum Launcher {
 
 // TODO: Implement https://docs.rs/iced_native/0.2.2/iced_native/input/keyboard/enum.Event.html to
 // track keypress and mouse click events
+// Do I have to reimplement TextInput widget to always accept key events even if it isn't selected?
 
 impl Application for Launcher {
     type Executor = iced_futures::executor::Tokio;
-    type Message = Message;
+    type Message = LauncherMessage;
     type Flags = ();
 
     fn new(_flags: ()) -> (Launcher, Command<Self::Message>) {
@@ -64,7 +68,7 @@ impl Application for Launcher {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
-            Message::QueryProgress(query_result) => match self {
+            LauncherMessage::QueryProgress(query_result) => match self {
                 Launcher::Idle { .. } => { Command::none() },
                 Launcher::Querying { state } => {
                     match query_result {
@@ -85,7 +89,13 @@ impl Application for Launcher {
                     Command::none()
                 },
             },
-            Message::InputChanged(new_input) => match self {
+            // Message::EventOccurred(event) => match self {
+            //     Launcher::Idle{ state } | Launcher::Querying { state } =>{
+            //         // state.input.send_event(event.clone());
+            //         Command::none()
+            //     }
+            // },
+            LauncherMessage::InputChanged(new_input) => match self {
                 Launcher::Idle { .. } => {
                     let mut state = State::new();
                     state.input_value = new_input.clone();
@@ -96,7 +106,7 @@ impl Application for Launcher {
                 // and then start a new query
                 _ => Command::none(),
             },
-            Message::SubmitInput => {
+            LauncherMessage::SubmitInput => {
                 // Launch some action with the selected result and then clear state
                 *self = Launcher::Idle { state: State::new() };
                 Command::none()
@@ -104,16 +114,36 @@ impl Application for Launcher {
         }
     }
 
-    fn subscription(&self) -> Subscription<Message> {
-        match self {
+    fn subscription(&self) -> Subscription<Self::Message> {
+        let query_subscription = match self {
             Launcher::Idle { .. } => Subscription::none(),
             Launcher::Querying { state } => {
                  Query::new(state.input_value.clone())
                      .get_output()
-                     .map(Message::QueryProgress)
+                     .map(LauncherMessage::QueryProgress)
             },
-        }
+        };
+
+        Subscription::batch(vec![
+            // iced_native::subscription::events().map(Message::EventOccurred),
+            query_subscription,
+        ])
     }
+
+    // I think the whole view needs to be wrapped in a custom element so I can
+    // implement on_event on it and use that to route events properly. Eg always
+    // send characters to the text input
+    // fn on_event(
+    //     &mut self,
+    //     event: Event,
+    //     layout: Layout<'_>,
+    //     cursor_position: Point,
+    //     messages: &mut Vec<Message>,
+    //     renderer: &Renderer,
+    //     clipboard: Option<&dyn Clipboard>,
+    // ) {
+    //     println!("{:?}", event);
+    // }
 
     fn view(&mut self) -> Element<Self::Message> {
         match self {
@@ -122,23 +152,23 @@ impl Application for Launcher {
                     &mut state.input,
                     "",
                     &state.input_value,
-                    Message::InputChanged,
+                    LauncherMessage::InputChanged,
                 )
                     .padding(15)
                     .size(30)
-                    .on_submit(Message::SubmitInput);
+                    .on_submit(LauncherMessage::SubmitInput);
 
                 let query_results: Element<_> = state.query_results
                     .iter_mut()
                     .enumerate()
                     .fold(Column::new().spacing(20), |column, (_, query_result)| {
                         column.push(query_result.view())
-                    })
-                .into();
+                    }).into();
 
                 let content = Column::new()
                     .max_width(800)
                     .spacing(20)
+                    .push(LauncherWidget::new(Box::new(|m| m)))
                     .push(input)
                     .push(query_results);
 

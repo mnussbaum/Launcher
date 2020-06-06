@@ -5,7 +5,7 @@ use iced::{
     Text,
 };
 
-use crate::Message;
+use crate::LauncherMessage;
 
 #[derive(Debug, Clone)]
 pub struct QueryResultView {
@@ -19,7 +19,7 @@ impl QueryResultView {
         }
     }
 
-    pub fn view(&mut self) -> Element<Message> {
+    pub fn view(&mut self) -> Element<LauncherMessage> {
         Row::new()
             .spacing(20)
             .align_items(Align::Center)
