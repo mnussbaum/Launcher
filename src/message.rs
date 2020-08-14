@@ -10,7 +10,7 @@ pub enum QueryProgress {
 
 #[derive(Debug, Clone)]
 pub enum LauncherMessage {
-    // EventOccurred(iced_native::Event),
+    FocusTextInput,
     InputChanged(String),
     QueryProgress(QueryProgress),
     SubmitInput,

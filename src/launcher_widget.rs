@@ -1,6 +1,6 @@
 use iced_native::{
     layout, mouse, Background, Color, Element, Hasher, Layout, Length,
-    Point, Size, Widget, Clipboard, Event,
+    Point, Size, Widget, Clipboard, Event, keyboard
 };
 use iced_graphics::{Backend, Defaults, Primitive, Renderer};
 
@@ -16,16 +16,6 @@ impl<Message> LauncherWidget<Message> {
             on_edit,
         }
     }
-
-    // pub fn view(&mut self) -> Element<Message> {
-    //     Row::new()
-    //         .spacing(20)
-    //         .align_items(Align::Center)
-    //         .push(
-    //             Text::new(&self.text)
-    //         )
-    //         .into()
-    // }
 }
 
 impl<Message, B> Widget<Message, Renderer<B>> for LauncherWidget<Message>
@@ -59,8 +49,13 @@ where
         _renderer: &Renderer<B>,
         _clipboard: Option<&dyn Clipboard>,
     ) {
-        messages.push((self.on_edit)(LauncherMessage::InputChanged("hi".to_string())));
-        println!("got event {:?}", event);
+        match event {
+            Event::Keyboard(keyboard::Event::CharacterReceived(c)) => {
+                messages.push((self.on_edit)(LauncherMessage::FocusTextInput));
+                messages.push((self.on_edit)(LauncherMessage::InputChanged(c.to_string())));
+            }
+            _ => {},
+        }
     }
 
     fn hash_layout(&self, state: &mut Hasher) {

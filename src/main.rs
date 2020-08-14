@@ -43,6 +43,7 @@ impl State {
     }
 }
 
+#[derive(Debug)]
 enum Launcher {
     Idle { state: State },
     Querying { state: State },
@@ -95,6 +96,17 @@ impl Application for Launcher {
             //         Command::none()
             //     }
             // },
+            LauncherMessage::FocusTextInput => match self {
+                Launcher::Idle { state } => {
+                    let mut state = state.clone();
+                    state.input = text_input::State::focused();
+                    *self = Launcher::Querying { state };
+                    Command::none()
+                },
+                // If we're not idle we need to cancel everything currently running
+                // and then start a new query
+                _ => Command::none(),
+            },
             LauncherMessage::InputChanged(new_input) => match self {
                 Launcher::Idle { .. } => {
                     let mut state = State::new();
@@ -102,9 +114,12 @@ impl Application for Launcher {
                     *self = Launcher::Querying { state };
                     Command::none()
                 },
-                // If we're not idle we need to cancel everything currently running
-                // and then start a new query
-                _ => Command::none(),
+                Launcher::Querying { state } => {
+                    let mut new_state = State::new();
+                    new_state.input_value = format!("{}{}", state.input_value, new_input);
+                    *self = Launcher::Querying { state: new_state };
+                    Command::none()
+                },
             },
             LauncherMessage::SubmitInput => {
                 // Launch some action with the selected result and then clear state
