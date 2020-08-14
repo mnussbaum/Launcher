@@ -32,7 +32,7 @@ pub fn main() {
 #[derive(Debug, Default, Clone)]
 struct State {
     scroll: scrollable::State,
-    input: text_input::State,
+    input_state: text_input::State,
     input_value: String,
     query_results: Vec<QueryResultView>,
 }
@@ -96,30 +96,25 @@ impl Application for Launcher {
             //         Command::none()
             //     }
             // },
-            LauncherMessage::FocusTextInput => match self {
-                Launcher::Idle { state } => {
-                    let mut state = state.clone();
-                    state.input = text_input::State::focused();
-                    *self = Launcher::Querying { state };
-                    Command::none()
-                },
-                // If we're not idle we need to cancel everything currently running
-                // and then start a new query
-                _ => Command::none(),
-            },
+            // LauncherMessage::FocusTextInput => match self {
+            //     Launcher::Idle { state } => {
+            //         let mut state = state.clone();
+            //         state.input = text_input::State::focused();
+            //         *self = Launcher::Querying { state };
+            //         Command::none()
+            //     },
+            //     // If we're not idle we need to cancel everything currently running
+            //     // and then start a new query
+            //     _ => Command::none(),
+            // },
             LauncherMessage::InputChanged(new_input) => match self {
-                Launcher::Idle { .. } => {
-                    let mut state = State::new();
-                    state.input_value = new_input.clone();
-                    *self = Launcher::Querying { state };
-                    Command::none()
-                },
-                Launcher::Querying { state } => {
-                    let mut new_state = State::new();
-                    new_state.input_value = format!("{}{}", state.input_value, new_input);
+                Launcher::Idle { state } | Launcher::Querying { state } => {
+                    let mut new_state = state.clone();
+                    new_state.input_value = new_input;
                     *self = Launcher::Querying { state: new_state };
                     Command::none()
                 },
+                // _ => Command::none(),
             },
             LauncherMessage::SubmitInput => {
                 // Launch some action with the selected result and then clear state
@@ -164,7 +159,7 @@ impl Application for Launcher {
         match self {
             Launcher::Querying { state } | Launcher::Idle { state } => {
                 let input = TextInput::new(
-                    &mut state.input,
+                    &mut state.input_state,
                     "",
                     &state.input_value,
                     LauncherMessage::InputChanged,
@@ -183,8 +178,7 @@ impl Application for Launcher {
                 let content = Column::new()
                     .max_width(800)
                     .spacing(20)
-                    .push(LauncherWidget::new(Box::new(|m| m)))
-                    .push(input)
+                    .push(LauncherWidget::new(input.into()))
                     .push(query_results);
 
                 return Scrollable::new(&mut state.scroll)

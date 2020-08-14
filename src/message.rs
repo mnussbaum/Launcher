@@ -10,7 +10,7 @@ pub enum QueryProgress {
 
 #[derive(Debug, Clone)]
 pub enum LauncherMessage {
-    FocusTextInput,
+    // FocusTextInput,
     InputChanged(String),
     QueryProgress(QueryProgress),
     SubmitInput,

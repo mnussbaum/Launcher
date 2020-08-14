@@ -1,24 +1,20 @@
 use iced_native::{
-    layout, mouse, Background, Color, Element, Hasher, Layout, Length,
-    Point, Size, Widget, Clipboard, Event, keyboard
+    layout, mouse, Element, Hasher, Layout, Length,
+    Point, Widget, Clipboard, Event,
 };
 use iced_graphics::{Backend, Defaults, Primitive, Renderer};
 
-use crate::LauncherMessage;
-
-pub struct LauncherWidget<Message> {
-    on_edit: Box<dyn Fn(LauncherMessage) -> Message>,
+pub struct LauncherWidget<'a, Message, B: iced_graphics::Backend> {
+    text_input: iced_native::Element<'a, Message, Renderer<B>>,
 }
 
-impl<Message> LauncherWidget<Message> {
-    pub fn new(on_edit: Box<dyn Fn(LauncherMessage) -> Message>) -> Self {
-        Self {
-            on_edit,
-        }
+impl<'a, Message, B: iced_graphics::Backend> LauncherWidget<'a, Message, B> {
+    pub fn new(text_input: iced_native::Element<'a, Message, Renderer<B>>) -> Self {
+        Self { text_input }
     }
 }
 
-impl<Message, B> Widget<Message, Renderer<B>> for LauncherWidget<Message>
+impl<'a, Message, B> Widget<Message, Renderer<B>> for LauncherWidget<'a, Message, B>
 where
     B: Backend,
 {
@@ -31,63 +27,50 @@ where
     }
     fn layout(
         &self,
-        _renderer: &Renderer<B>,
-        _limits: &layout::Limits,
+        renderer: &Renderer<B>,
+        limits: &layout::Limits,
     ) -> layout::Node {
-        layout::Node::new(Size::new(
-            f32::from(10.0) * 2.0,
-            f32::from(10.0) * 2.0,
-        ))
+        self.text_input.layout(renderer, limits)
     }
 
     fn on_event(
         &mut self,
         event: Event,
-        _layout: Layout<'_>,
-        _cursor_position: Point,
+        layout: Layout<'_>,
+        cursor_position: Point,
         messages: &mut Vec<Message>,
-        _renderer: &Renderer<B>,
-        _clipboard: Option<&dyn Clipboard>,
+        renderer: &Renderer<B>,
+        clipboard: Option<&dyn Clipboard>,
     ) {
-        match event {
-            Event::Keyboard(keyboard::Event::CharacterReceived(c)) => {
-                messages.push((self.on_edit)(LauncherMessage::FocusTextInput));
-                messages.push((self.on_edit)(LauncherMessage::InputChanged(c.to_string())));
-            }
-            _ => {},
-        }
+        self.text_input.on_event(
+            event,
+            layout,
+            cursor_position,
+            messages,
+            renderer,
+            clipboard,
+        )
     }
 
     fn hash_layout(&self, state: &mut Hasher) {
-        use std::hash::Hash;
-
-        10.hash(state);
+        self.text_input.hash_layout(state)
     }
 
     fn draw(
         &self,
-        _renderer: &mut Renderer<B>,
-        _defaults: &Defaults,
+        renderer: &mut Renderer<B>,
+        defaults: &Defaults,
         layout: Layout<'_>,
-        _cursor_position: Point,
+        cursor_position: Point,
     ) -> (Primitive, mouse::Interaction) {
-        (
-            Primitive::Quad {
-                bounds: layout.bounds(),
-                background: Background::Color(Color::BLACK),
-                border_radius: 10,
-                border_width: 0,
-                border_color: Color::TRANSPARENT,
-            },
-            mouse::Interaction::default(),
-        )
+        self.text_input.draw(renderer, defaults, layout, cursor_position)
     }
 }
 
-impl<'a, Message: 'a, B: iced_graphics::backend::Backend> Into<Element<'a, Message, Renderer<B>>> for LauncherWidget<Message> {
+impl<'a, Message: 'a, B: iced_graphics::backend::Backend + 'a> Into<Element<'a, Message, Renderer<B>>> for LauncherWidget<'a, Message, B> {
     fn into(self) -> Element<'a, Message, Renderer<B>>
     where
-        B: Backend,
+        B: Backend + 'a,
     {
 
         Element::new(self)
