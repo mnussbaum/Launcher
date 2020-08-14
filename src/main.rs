@@ -109,7 +109,14 @@ impl Application for Launcher {
             // },
             LauncherMessage::InputChanged(new_input) => match self {
                 Launcher::Idle { state } | Launcher::Querying { state } => {
-                    let mut new_state = state.clone();
+                    let mut new_state: State;
+                    if new_input == "" {
+                        // TODO: Cancel existing queries here
+                        new_state = State::new();
+                    } else {
+                        new_state = state.clone();
+                    }
+
                     new_state.input_value = new_input;
                     *self = Launcher::Querying { state: new_state };
                     Command::none()

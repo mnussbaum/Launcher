@@ -14,6 +14,9 @@ impl<'a, Message, B: iced_graphics::Backend> LauncherWidget<'a, Message, B> {
     }
 }
 
+// START HERE: Make the widget be the full size of the window, so it can route
+// all keypresses to the text box
+// Or start on query cancellation
 impl<'a, Message, B> Widget<Message, Renderer<B>> for LauncherWidget<'a, Message, B>
 where
     B: Backend,
