@@ -10,8 +10,10 @@ pub enum QueryProgress {
 
 #[derive(Debug, Clone)]
 pub enum LauncherMessage {
-    // FocusTextInput,
     InputChanged(String),
+    // TODO: Eventually all these methods should take a query argument so they only operate if their
+    // query is still the one being displayed
+    EndQuery(()),
     QueryProgress(QueryProgress),
     SubmitInput,
 }

@@ -67,8 +67,17 @@ impl Application for Launcher {
         String::from("Launcher")
     }
 
+    // To set focus to the text box. TBD how to get the cursor pos right
+    // state.input = text_input::State::focused();
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
+            LauncherMessage::EndQuery(_) => {
+                let mut new_state = State::new();
+                new_state.input_value = "".into();
+                *self = Launcher::Idle { state: new_state };
+                // TODO: Cancel existing queries here
+                Command::none()
+            },
             LauncherMessage::QueryProgress(query_result) => match self {
                 Launcher::Idle { .. } => { Command::none() },
                 Launcher::Querying { state } => {
@@ -90,29 +99,14 @@ impl Application for Launcher {
                     Command::none()
                 },
             },
-            // Message::EventOccurred(event) => match self {
-            //     Launcher::Idle{ state } | Launcher::Querying { state } =>{
-            //         // state.input.send_event(event.clone());
-            //         Command::none()
-            //     }
-            // },
-            // LauncherMessage::FocusTextInput => match self {
-            //     Launcher::Idle { state } => {
-            //         let mut state = state.clone();
-            //         state.input = text_input::State::focused();
-            //         *self = Launcher::Querying { state };
-            //         Command::none()
-            //     },
-            //     // If we're not idle we need to cancel everything currently running
-            //     // and then start a new query
-            //     _ => Command::none(),
-            // },
             LauncherMessage::InputChanged(new_input) => match self {
                 Launcher::Idle { state } | Launcher::Querying { state } => {
                     let mut new_state: State;
                     if new_input == "" {
-                        // TODO: Cancel existing queries here
-                        new_state = State::new();
+                        return Command::perform(
+                            no_op_future(),
+                            LauncherMessage::EndQuery,
+                        )
                     } else {
                         new_state = state.clone();
                     }
@@ -121,7 +115,6 @@ impl Application for Launcher {
                     *self = Launcher::Querying { state: new_state };
                     Command::none()
                 },
-                // _ => Command::none(),
             },
             LauncherMessage::SubmitInput => {
                 // Launch some action with the selected result and then clear state
@@ -146,21 +139,6 @@ impl Application for Launcher {
             query_subscription,
         ])
     }
-
-    // I think the whole view needs to be wrapped in a custom element so I can
-    // implement on_event on it and use that to route events properly. Eg always
-    // send characters to the text input
-    // fn on_event(
-    //     &mut self,
-    //     event: Event,
-    //     layout: Layout<'_>,
-    //     cursor_position: Point,
-    //     messages: &mut Vec<Message>,
-    //     renderer: &Renderer,
-    //     clipboard: Option<&dyn Clipboard>,
-    // ) {
-    //     println!("{:?}", event);
-    // }
 
     fn view(&mut self) -> Element<Self::Message> {
         match self {
@@ -197,4 +175,8 @@ impl Application for Launcher {
             },
         }
     }
+}
+
+async fn no_op_future() -> () {
+    return ()
 }
